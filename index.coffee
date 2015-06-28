@@ -1,24 +1,12 @@
 express = require('express')
-ss = require 'socket.io-stream'
 fs = require 'fs'
-lame = require 'lame'
 browserify = require 'browserify'
+mp3Stream = require './mp3Stream2.coffee'
 
 app = express()
 server = app.listen(4040)
 io = require('socket.io').listen(server)
 
-encoder = new lame.Encoder({
-  # // input 
-  channels: 2,        #// 2 channels (left and right) 
-  bitDepth: 16,       #// 16-bit samples 
-  sampleRate: 44100,  #// 44,100 Hz sample rate 
- 
-  # // output 
-  bitRate: 128,
-  outSampleRate: 22050,
-  mode: lame.STEREO #// STEREO (default), JOINTSTEREO, DUALCHANNEL or MONO 
-});
 
 app.use(express.static(__dirname + '/public'));
 
@@ -27,16 +15,19 @@ app.get '/bundle.js', (req, res) ->
     transform: [require 'coffeeify']
   }).bundle().pipe(res);
 
+app.get '/FourtetStream.mp3', (req, res) ->
+  # mp3Stream('./audio/Fourtet.mp3')
+  fs.createReadStream("#{__dirname}/audio/Fourtet.wav")
+    .pipe(res)
+
 io.on 'connection', (socket) ->
 
   socket.on 'stream_init', (message) ->
 
-    console.log message
-
-    fs.createReadStream("#{__dirname}/audio/Fourtet.wav")
-      .pipe(encoder)
+    mp3Stream("#{__dirname}/audio/Fourtet.mp3")
       .on 'data', (buf) ->
-        console.log buf
+        console.log buf.toString('hex')
+        console.log buf.toString('hex').length
         socket.emit 'data', {buffer:buf}
       .on 'error', (er) ->
         throw er
