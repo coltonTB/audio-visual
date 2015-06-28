@@ -38,15 +38,14 @@ socket = io.connect 'http://localhost:4040'
 
 document.getElementById('btn').addEventListener 'click', ->
 
-  audioStream = ss.createStream();
-  ss(socket).emit 'stream_init', audioStream
+  socket.emit 'stream_init', {msg: 'hi'}
 
-  audioStream.on 'data', (d) ->
-    audioCtx.decodeAudioData d.toArrayBuffer(), (decoded) ->
+  socket.on 'data', (d) ->
+    audioCtx.decodeAudioData d.buffer, (decoded) ->
       buffStream.addBuffer decoded
 
   setTimeout ->
     buffStream.play()
-  , 5000
+  , 3000
 
-  
+
