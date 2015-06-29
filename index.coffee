@@ -15,7 +15,7 @@ app.get '/bundle.js', (req, res) ->
   }).bundle().pipe(res);
 
 app.get '/FourtetStream.mp3', (req, res) ->
-  fs.createReadStream("#{__dirname}/audio/Fourtet2.mp3")
+  fs.createReadStream("#{__dirname}/audio/Fourtet.mp3")
     .pipe(res)
 
 io.on 'connection', (socket) ->
