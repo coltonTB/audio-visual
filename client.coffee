@@ -14,11 +14,26 @@ class BufferedPlayer
     currentBuffer = firstBuffer
     endTime = @ctx.currentTime + firstBuffer.duration
 
-    @_playBuffer firstBuffer
+    @_playBuffer firstBuffer.data
     for buff in @audioBuffers[1..]
-      console.log endTime
-      @_playBuffer buff, endTime
+      @_playBuffer buff.data, endTime
       endTime += buff.duration
+    console.log 'no data'
+
+  play2: ->
+    buffers = @audioBuffers
+    playBuf = ->
+      buffer = buffers.shift()
+      source = audioCtx.createBufferSource()
+      source.buffer = buffer
+      source.connect audioCtx.destination
+      source.start()
+      source.onended = playBuf
+    playBuf()
+
+  playSingle: (n) ->
+    @_playBuffer(@audioBuffers[n])
+
 
   pause: ->
 
@@ -42,10 +57,13 @@ document.getElementById('btn').addEventListener 'click', ->
 
   socket.on 'data', (d) ->
     audioCtx.decodeAudioData d.buffer, (decoded) ->
-      buffStream.addBuffer decoded
+      buffStream.addBuffer {
+        data: decoded,
+        duration: d.totalDuration
+      }
 
   setTimeout ->
     buffStream.play()
-  , 3000
+  , 5000
 
 

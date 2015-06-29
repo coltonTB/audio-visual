@@ -1,7 +1,7 @@
 express = require('express')
 fs = require 'fs'
 browserify = require 'browserify'
-mp3Stream = require './mp3Stream2.coffee'
+MStream = require './mp3Stream.coffee'
 
 app = express()
 server = app.listen(4040)
@@ -24,11 +24,10 @@ io.on 'connection', (socket) ->
 
   socket.on 'stream_init', (message) ->
 
-    mp3Stream("#{__dirname}/audio/Fourtet.mp3")
-      .on 'data', (buf) ->
-        console.log buf.toString('hex')
-        console.log buf.toString('hex').length
-        socket.emit 'data', {buffer:buf}
+    mp3Stream = new MStream("#{__dirname}/audio/Fourtet.mp3")
+
+    mp3Stream.on 'data', (dat) ->
+        socket.emit 'data', dat
       .on 'error', (er) ->
         throw er
 
