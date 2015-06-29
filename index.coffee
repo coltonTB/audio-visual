@@ -1,7 +1,6 @@
 express = require('express')
 fs = require 'fs'
 browserify = require 'browserify'
-MStream = require './mp3Stream.coffee'
 
 app = express()
 server = app.listen(4040)
@@ -16,8 +15,7 @@ app.get '/bundle.js', (req, res) ->
   }).bundle().pipe(res);
 
 app.get '/FourtetStream.mp3', (req, res) ->
-  # mp3Stream('./audio/Fourtet.mp3')
-  fs.createReadStream("#{__dirname}/audio/Fourtet.wav")
+  fs.createReadStream("#{__dirname}/audio/Fourtet2.mp3")
     .pipe(res)
 
 io.on 'connection', (socket) ->

@@ -1,69 +1,39 @@
 io = require 'socket.io-client'
 
-class BufferedPlayer
-
-  constructor: (@ctx) ->
-    @playHead = 0
-    @audioBuffers = []
-
-  addBuffer: (buf) =>
-    @audioBuffers.push buf
-
-  play: ->
-    firstBuffer = @audioBuffers[0]
-    currentBuffer = firstBuffer
-    endTime = @ctx.currentTime + firstBuffer.duration
-
-    @_playBuffer firstBuffer.data
-    for buff in @audioBuffers[1..]
-      @_playBuffer buff.data, endTime
-      endTime += buff.duration
-    console.log 'no data'
-
-  play2: ->
-    buffers = @audioBuffers
-    playBuf = ->
-      buffer = buffers.shift()
-      source = audioCtx.createBufferSource()
-      source.buffer = buffer
-      source.connect audioCtx.destination
-      source.start()
-      source.onended = playBuf
-    playBuf()
-
-  playSingle: (n) ->
-    @_playBuffer(@audioBuffers[n])
-
-
-  pause: ->
-
-  seek: (seconds) ->
-
-  _playBuffer: (buffer, time=0) ->
-    source = audioCtx.createBufferSource()
-    source.buffer = buffer
-    source.connect audioCtx.destination
-    source.start time
-
-
-
+audioElement = document.querySelector('audio')
 audioCtx = new AudioContext()
-buffStream = new BufferedPlayer(audioCtx)
+canvasElement = document.querySelector('canvas')
+canvasCtx = canvasElement.getContext('2d')
 socket = io.connect 'http://localhost:4040'
 
-document.getElementById('btn').addEventListener 'click', ->
+analyser = audioCtx.createAnalyser()
+analyser.fftSize = 512
+bufferLength = analyser.frequencyBinCount
+dataArray = new Uint8Array bufferLength
 
-  socket.emit 'stream_init', {msg: 'hi'}
+WIDTH = canvasElement.getAttribute('width')
+HEIGHT = canvasElement.getAttribute('height')
+barWidth = (WIDTH / bufferLength) * 2.5
 
-  socket.on 'data', (d) ->
-    audioCtx.decodeAudioData d.buffer, (decoded) ->
-      buffStream.addBuffer {
-        data: decoded,
-        duration: d.totalDuration
-      }
+audioElement.addEventListener 'play', ->
 
-  setTimeout ->
-    buffStream.play()
-  , 5000
+  source = audioCtx.createMediaElementSource audioElement
+  source.connect analyser
+  analyser.connect audioCtx.destination
 
+  draw()
+
+draw = ->
+  requestAnimationFrame draw
+
+  analyser.getByteFrequencyData(dataArray)
+
+  canvasCtx.fillStyle = 'rgb(0,0,0)'
+  canvasCtx.fillRect 0, 0, WIDTH, HEIGHT
+  x = 0
+  for i in [0..bufferLength]
+    barHeight = dataArray[i]
+    canvasCtx.fillStyle =  "rgb(#{barHeight+100},50,50)"
+    canvasCtx.fillRect(x, HEIGHT-barHeight/2, barWidth, barHeight/2)
+    x += barWidth + 1
 
