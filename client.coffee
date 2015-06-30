@@ -1,23 +1,41 @@
 io = require 'socket.io-client'
 socket = io.connect 'http://localhost:4040'
 
+randColor = ->
+  o = -> Math.floor(Math.random()*256)
+  "rgb(#{o()},#{o()},#{o()})"
+
 class Canvas 
   constructor: (sel) ->
     @el = document.querySelector sel
     @ctx = @el.getContext '2d'
     @width = @el.getAttribute 'width'
     @height = @el.getAttribute 'height'
+    @color = randColor()
     @x = 0
 
   clear: ->
-    @ctx.fillRect 0, 0, @width, @height
+    @x=0
+    @ctx.clearRect(0,0,@width,@height)
+
+  addFrame: (size) ->
+    if @x > @width then @clear()
+    y = @height - @height*size
+    @ctx.fillStyle = @color
+    @ctx.fillRect @x, y, 1, @height - y
+    @x++
+
 
 audioElement = document.querySelector('audio')
 audioCtx = new AudioContext()
 
-freqCanvas = new Canvas '#freq'
-energyCanvas = new Canvas '#energy'
-amplitudeCanvas = new Canvas '#amp'
+# freqCanvas = new Canvas '#freq'
+# amplitudeCanvas = new Canvas '#amp'
+
+energyCanvasH  = new Canvas '#energyHigh'
+energyCanvasMH = new Canvas '#energyMidHigh'
+energyCanvasML = new Canvas '#energyMidLow'
+energyCanvasL  = new Canvas '#energyLow'
 
 pause = true
 
@@ -33,9 +51,9 @@ audioElement.addEventListener 'play', ->
   source.connect analyser
   analyser.connect audioCtx.destination
 
-  drawFreq()
+  # drawFreq()
   drawEnergy()
-  drawAmp()
+  # drawAmp()
 
 audioElement.addEventListener 'pause', ->
   pause = true
@@ -56,34 +74,34 @@ drawFreq = ->
     freqCanvas.ctx.fillRect(x, freqCanvas.height-barHeight/2, barWidth, barHeight)
     x += barWidth + 1
 
-drawAmp = ->
-  if pause then return
-  requestAnimationFrame drawAmp
-  analyser.getByteTimeDomainData dataArray
-  total = [].reduceRight.call dataArray, (p,c)->p+c
-  mean = total / (dataArray.length * 255)
-
-  x = amplitudeCanvas.x
-  y = amplitudeCanvas.height - amplitudeCanvas.height*mean
-
-  amplitudeCanvas.ctx.fillStyle = 'blue'
-  amplitudeCanvas.ctx.fillRect x, y, 1, amplitudeCanvas.height - y
-  amplitudeCanvas.x++
-
 drawEnergy = ->
-  if pause then return
-  requestAnimationFrame drawEnergy
+  if !pause then requestAnimationFrame drawEnergy
+
   analyser.getByteFrequencyData(dataArray)
-  energy = [].reduceRight.call dataArray, (p,c)->p+c
-  normEnergy = energy / (dataArray.length * 255)
+  eH = eMH = eML = eL = 0
 
-  x = energyCanvas.x
-  y = energyCanvas.height - energyCanvas.height*normEnergy
+  for i in [0..bufferLength]
+    val = dataArray[i]
+    if i < (bufferLength / 4)
+      eL += val
+    else if i < (bufferLength / 2)
+      eML += val
+    else if i < (3*bufferLength / 4)
+      eMH += val
+    else if i < bufferLength
+      eH += val
 
-  energyCanvas.ctx.fillStyle = 'red'
-  energyCanvas.ctx.fillRect x, y, 1, energyCanvas.height - y
-  energyCanvas.x++
+  normalized = [eH, eMH, eML, eL].map (number) ->
+    return number / (dataArray.length * 255)
 
+  energyCanvasH.addFrame(normalized[0]) 
+  energyCanvasMH.addFrame(normalized[1])
+  energyCanvasML.addFrame(normalized[2])
+  energyCanvasL.addFrame(normalized[3]) 
+
+
+  # normEnergy = energy / (dataArray.length * 255)
+  # console.log "eh: #{eH}\neMH: #{eMH}\neML: #{eML}\neL: #{eL}\n"
 
 
 

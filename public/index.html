@@ -2,6 +2,11 @@
 <html>
 <head>
   <title></title>
+  <style type="text/css">
+    canvas{
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
 
@@ -10,9 +15,18 @@
     Your browser does not support the audio element.
   </audio>
 
-  <canvas id="freq" height="500" width="500"></canvas>
-  <canvas id="energy" height="200" width="1500"></canvas>
-  <canvas id="amp" height="200" width="1500"></canvas>
+  <!-- <canvas id="freq" height="500" width="500"></canvas> -->
+  <!-- <canvas id="amp" height="200" width="1500"></canvas> -->
+
+
+  <h1>High</h1>
+  <canvas id="energyHigh" height="100" width="1000"></canvas>
+  <h1>Mid-High</h1>
+  <canvas id="energyMidHigh" height="100" width="1000"></canvas>
+  <h1>Mid-Low</h1>
+  <canvas id="energyMidLow" height="100" width="1000"></canvas>
+  <h1>Low</h1>
+  <canvas id="energyLow" height="100" width="1000"></canvas>
 
   <script type="text/javascript" src="./socket.io-stream.js"></script>
   <script type="text/javascript" src="./bundle.js"></script>
