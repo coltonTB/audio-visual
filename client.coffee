@@ -1,7 +1,5 @@
 io = require 'socket.io-client'
-freqCanvas = null
-energyCanvas = null
-pause = true
+socket = io.connect 'http://localhost:4040'
 
 class Canvas 
   constructor: (sel) ->
@@ -17,8 +15,11 @@ class Canvas
 audioElement = document.querySelector('audio')
 audioCtx = new AudioContext()
 
+freqCanvas = new Canvas '#freq'
+energyCanvas = new Canvas '#energy'
+amplitudeCanvas = new Canvas '#amp'
 
-socket = io.connect 'http://localhost:4040'
+pause = true
 
 analyser = audioCtx.createAnalyser()
 analyser.fftSize = 64
@@ -32,11 +33,9 @@ audioElement.addEventListener 'play', ->
   source.connect analyser
   analyser.connect audioCtx.destination
 
-  freqCanvas = new Canvas '#freq'
-  energyCanvas = new Canvas '#energy'
-
   drawFreq()
   drawEnergy()
+  drawAmp()
 
 audioElement.addEventListener 'pause', ->
   pause = true
@@ -57,6 +56,19 @@ drawFreq = ->
     freqCanvas.ctx.fillRect(x, freqCanvas.height-barHeight/2, barWidth, barHeight)
     x += barWidth + 1
 
+drawAmp = ->
+  if pause then return
+  requestAnimationFrame drawAmp
+  analyser.getByteTimeDomainData dataArray
+  total = [].reduceRight.call dataArray, (p,c)->p+c
+  mean = total / (dataArray.length * 255)
+
+  x = amplitudeCanvas.x
+  y = amplitudeCanvas.height - amplitudeCanvas.height*mean
+
+  amplitudeCanvas.ctx.fillStyle = 'blue'
+  amplitudeCanvas.ctx.fillRect x, y, 1, amplitudeCanvas.height - y
+  amplitudeCanvas.x++
 
 drawEnergy = ->
   if pause then return
@@ -65,13 +77,11 @@ drawEnergy = ->
   energy = [].reduceRight.call dataArray, (p,c)->p+c
   normEnergy = energy / (dataArray.length * 255)
 
-  energyCanvas.ctx.beginPath()
-
   x = energyCanvas.x
   y = energyCanvas.height - energyCanvas.height*normEnergy
 
   energyCanvas.ctx.fillStyle = 'red'
-  energyCanvas.ctx.fillRect x, y, 1, 1
+  energyCanvas.ctx.fillRect x, y, 1, energyCanvas.height - y
   energyCanvas.x++
 
 

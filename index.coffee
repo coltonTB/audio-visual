@@ -15,14 +15,14 @@ app.get '/bundle.js', (req, res) ->
   }).bundle().pipe(res);
 
 app.get '/FourtetStream.mp3', (req, res) ->
-  fs.createReadStream("#{__dirname}/audio/Fourtet.mp3")
+  fs.createReadStream("#{__dirname}/_audio/Fourtet2.mp3")
     .pipe(res)
 
 io.on 'connection', (socket) ->
 
   socket.on 'stream_init', (message) ->
 
-    mp3Stream = new MStream("#{__dirname}/audio/Fourtet.mp3")
+    mp3Stream = new MStream("#{__dirname}/_audio/Fourtet.mp3")
 
     mp3Stream.on 'data', (dat) ->
         socket.emit 'data', dat
